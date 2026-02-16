@@ -129,12 +129,12 @@ def example_batch_tickets():
     for i, result in enumerate(batch.results):
         print(f"\n  Ticket {i+1}:")
         print(f"    Original:  {tickets[i][:80]}...")
-        print(f"    Tokenized: {result.text[:80]}...")
-        print(f"    Entities:  {result.entities_count}")
+        print(f"    Tokenized: {result['text'][:80]}...")
+        print(f"    Entities:  {result['entities_count']}")
 
     # Send all tokenized tickets to OpenAI for categorization
     ticket_texts = "\n".join(
-        f"Ticket {i+1}: {r.text}" for i, r in enumerate(batch.results)
+        f"Ticket {i+1}: {r['text']}" for i, r in enumerate(batch.results)
     )
 
     completion = openai_client.chat.completions.create(

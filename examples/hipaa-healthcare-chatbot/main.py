@@ -186,8 +186,8 @@ def example_batch_records():
     for i, result in enumerate(batch.results):
         print(f"  Record {i+1}:")
         print(f"    Original: {records[i][:70]}...")
-        print(f"    Redacted: {result.text[:70]}...")
-        print(f"    PHI removed: {result.entities_count} identifiers\n")
+        print(f"    Redacted: {result['text'][:70]}...")
+        print(f"    PHI removed: {result['entities_count']} identifiers\n")
 
 
 if __name__ == "__main__":

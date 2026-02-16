@@ -41,6 +41,35 @@ Examples showing how to protect PII when calling LLM APIs.
 </tbody>
 </table>
 
+## Compliance
+
+End-to-end examples for building regulation-compliant AI applications.
+
+<table>
+<thead>
+<tr>
+  <th>Regulation</th>
+  <th>Description</th>
+  <th>Region</th>
+  <th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><b>GDPR</b></td>
+  <td>EU-compliant OpenAI integration with <code>gdpr_eu</code> policy, batch processing</td>
+  <td>EU</td>
+  <td><a href="examples/gdpr-openai-python">gdpr-openai-python</a></td>
+</tr>
+<tr>
+  <td><b>HIPAA</b></td>
+  <td>Healthcare chatbot protecting PHI with <code>hipaa_us</code> policy, multi-turn chat</td>
+  <td>US</td>
+  <td><a href="examples/hipaa-healthcare-chatbot">hipaa-healthcare-chatbot</a></td>
+</tr>
+</tbody>
+</table>
+
 ## Framework Integrations
 
 Middleware that automatically protects PII in web applications.

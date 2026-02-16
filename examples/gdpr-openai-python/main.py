@@ -123,10 +123,10 @@ def example_batch_tickets():
     print(f"{'='*60}")
 
     # Tokenize all tickets in one API call
-    tokenized_batch = blindfold.tokenize(texts=tickets, policy="gdpr_eu")
+    batch = blindfold.tokenize_batch(tickets, policy="gdpr_eu")
 
-    print(f"\nTokenized {len(tokenized_batch.results)} tickets:")
-    for i, result in enumerate(tokenized_batch.results):
+    print(f"\nTokenized {len(batch.results)} tickets:")
+    for i, result in enumerate(batch.results):
         print(f"\n  Ticket {i+1}:")
         print(f"    Original:  {tickets[i][:80]}...")
         print(f"    Tokenized: {result.text[:80]}...")
@@ -134,7 +134,7 @@ def example_batch_tickets():
 
     # Send all tokenized tickets to OpenAI for categorization
     ticket_texts = "\n".join(
-        f"Ticket {i+1}: {r.text}" for i, r in enumerate(tokenized_batch.results)
+        f"Ticket {i+1}: {r.text}" for i, r in enumerate(batch.results)
     )
 
     completion = openai_client.chat.completions.create(

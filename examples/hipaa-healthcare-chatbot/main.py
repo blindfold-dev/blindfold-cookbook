@@ -180,10 +180,10 @@ def example_batch_records():
     print(f"{'='*60}")
 
     # Redact PHI from all records at once (irreversible — for safe storage/logging)
-    redacted = blindfold.redact(texts=records, policy="hipaa_us")
+    batch = blindfold.redact_batch(records, policy="hipaa_us")
 
-    print(f"\nRedacted {len(redacted.results)} patient records:\n")
-    for i, result in enumerate(redacted.results):
+    print(f"\nRedacted {len(batch.results)} patient records:\n")
+    for i, result in enumerate(batch.results):
         print(f"  Record {i+1}:")
         print(f"    Original: {records[i][:70]}...")
         print(f"    Redacted: {result.text[:70]}...")

@@ -30,25 +30,9 @@ Sarah Thompson,s.thompson@email.com,789-01-2345,44,Migraine,Sumatriptan 50mg,Dr.
 
 async function main() {
   // Step 1: Tokenize — replace PII with safe tokens
-  console.log("[Step 1] Tokenizing CSV with Blindfold...\n");
   const tokenized = await blindfold.tokenize(SAMPLE_CSV, { policy: "strict" });
 
-  console.log(`Detected ${tokenized.entities_count} PII entities:`);
-  for (const entity of tokenized.detected_entities) {
-    console.log(
-      `  - ${entity.type}: ${entity.text} (${Math.round(entity.score * 100)}%)`
-    );
-  }
-
-  console.log(`\nTokenized CSV (what OpenAI sees):`);
-  for (const line of tokenized.text.split("\n").slice(0, 4)) {
-    console.log(`  ${line}`);
-  }
-  console.log("  ...");
-
   // Step 2: Ask OpenAI to write analysis code (it only sees tokens)
-  console.log("\n[Step 2] Asking OpenAI to write analysis code...\n");
-
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -70,23 +54,15 @@ async function main() {
   });
   const code = completion.choices[0].message.content!;
 
-  console.log("AI-generated code:");
-  for (const line of code.split("\n")) {
-    console.log(`  ${line}`);
-  }
-
   // Step 3: Execute in E2B sandbox with the ORIGINAL data
-  console.log("\n[Step 3] Running code in E2B sandbox (with real data)...\n");
-
   const sandbox = await Sandbox.create();
   try {
     await sandbox.files.write("/tmp/data.csv", SAMPLE_CSV);
     const execution = await sandbox.runCode(code);
 
     if (execution.error) {
-      console.log(`Error: ${execution.error.name}: ${execution.error.value}`);
+      console.error(`${execution.error.name}: ${execution.error.value}`);
     } else {
-      console.log("Results:");
       console.log(execution.logs.stdout.join(""));
     }
   } finally {

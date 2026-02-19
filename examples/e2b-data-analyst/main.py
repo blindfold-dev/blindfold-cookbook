@@ -35,21 +35,9 @@ def main():
     openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     # Step 1: Tokenize — replace PII with safe tokens
-    print("[Step 1] Tokenizing CSV with Blindfold...\n")
     tokenized = blindfold.tokenize(SAMPLE_CSV, policy="strict")
 
-    print(f"Detected {tokenized.entities_count} PII entities:")
-    for entity in tokenized.detected_entities:
-        print(f"  - {entity.type}: {entity.text} ({entity.score:.0%})")
-
-    print(f"\nTokenized CSV (what OpenAI sees):")
-    for line in tokenized.text.split("\n")[:4]:
-        print(f"  {line}")
-    print("  ...")
-
     # Step 2: Ask OpenAI to write analysis code (it only sees tokens)
-    print("\n[Step 2] Asking OpenAI to write analysis code...\n")
-
     completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -73,13 +61,7 @@ def main():
     )
     code = completion.choices[0].message.content
 
-    print("AI-generated code:")
-    for line in code.split("\n"):
-        print(f"  {line}")
-
     # Step 3: Execute in E2B sandbox with the ORIGINAL data
-    print("\n[Step 3] Running code in E2B sandbox (with real data)...\n")
-
     with Sandbox.create() as sandbox:
         sandbox.files.write("/tmp/data.csv", SAMPLE_CSV)
         execution = sandbox.run_code(code)
@@ -87,7 +69,6 @@ def main():
     if execution.error:
         print(f"Error: {execution.error.name}: {execution.error.value}")
     else:
-        print("Results:")
         print("".join(execution.logs.stdout))
 
 

@@ -99,6 +99,27 @@ Middleware that automatically protects PII in web applications.
 </tbody>
 </table>
 
+## AI Agents
+
+Examples showing how to safely give AI agents access to sensitive data.
+
+<table>
+<thead>
+<tr>
+  <th>Platform</th>
+  <th>Description</th>
+  <th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><b>E2B</b></td>
+  <td>AI data analyst — OpenAI writes code from tokenized CSV, E2B executes on real data</td>
+  <td><a href="examples/e2b-data-analyst">e2b-data-analyst</a></td>
+</tr>
+</tbody>
+</table>
+
 ## How Blindfold works
 
 ```

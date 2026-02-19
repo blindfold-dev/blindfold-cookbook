@@ -1,0 +1,122 @@
+/**
+ * HIPAA-Compliant Healthcare Chatbot with Blindfold (TypeScript)
+ *
+ * Tokenizes PHI with the hipaa_us policy and US region before sending
+ * to OpenAI. Supports multi-turn conversation with accumulated mapping.
+ *
+ * Usage:
+ *   npm install
+ *   cp .env.example .env  # add your API keys
+ *   npm start
+ */
+
+import "dotenv/config";
+import { Blindfold } from "@blindfold/sdk";
+import OpenAI from "openai";
+
+const blindfold = new Blindfold({
+  apiKey: process.env.BLINDFOLD_API_KEY!,
+  region: "us",
+});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+class HealthcareChatbot {
+  private conversation: { role: string; content: string }[] = [
+    {
+      role: "system",
+      content:
+        "You are a helpful healthcare assistant. Use patient identifier " +
+        "tokens exactly as given. Never ask for real patient information.",
+    },
+  ];
+  private mapping: Record<string, string> = {};
+
+  async chat(userMessage: string): Promise<string> {
+    // 1. Tokenize PHI with hipaa_us policy
+    const tokenized = await blindfold.tokenize(userMessage, {
+      policy: "hipaa_us",
+    });
+
+    // 2. Accumulate mapping across turns
+    Object.assign(this.mapping, tokenized.mapping);
+    this.conversation.push({ role: "user", content: tokenized.text });
+
+    // 3. Send to OpenAI — only tokens, never real PHI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: this.conversation as any,
+    });
+    const aiResponse = completion.choices[0].message.content!;
+
+    // 4. Store tokenized response in history
+    this.conversation.push({ role: "assistant", content: aiResponse });
+
+    // 5. Detokenize for display to clinician
+    const restored = blindfold.detokenize(aiResponse, this.mapping);
+    return restored.text;
+  }
+}
+
+async function main() {
+  console.log("\n" + "=".repeat(60));
+  console.log("HIPAA-Compliant Healthcare Chatbot (TypeScript)");
+  console.log("=".repeat(60));
+
+  // Single query example
+  const note =
+    "Patient John Smith (DOB: 03/15/1982, SSN: 123-45-6789) " +
+    "presented with chest pain. Dr. Emily Chen ordered an ECG. " +
+    "Contact: john.smith@email.com, (555) 867-5309. MRN: 4820193.";
+
+  console.log("\n[Single Query]");
+  console.log(`\nClinician notes:\n  "${note}"\n`);
+
+  const tokenized = await blindfold.tokenize(note, { policy: "hipaa_us" });
+
+  console.log(`Detected ${tokenized.entities_count} PHI identifiers:`);
+  for (const entity of tokenized.detected_entities) {
+    console.log(
+      `  - ${entity.type}: ${entity.text} (${Math.round(entity.score * 100)}%)`
+    );
+  }
+
+  console.log(`\nTokenized (what OpenAI sees):`);
+  console.log(`  "${tokenized.text}"`);
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "Summarize this clinical note briefly.",
+      },
+      { role: "user", content: tokenized.text },
+    ],
+  });
+  const aiResponse = completion.choices[0].message.content!;
+
+  const restored = blindfold.detokenize(aiResponse, tokenized.mapping);
+  console.log(`\nAI summary (PHI restored):`);
+  console.log(`  "${restored.text}"`);
+
+  // Multi-turn conversation example
+  console.log("\n" + "=".repeat(60));
+  console.log("Multi-Turn Conversation");
+  console.log("=".repeat(60));
+
+  const chatbot = new HealthcareChatbot();
+
+  const turns = [
+    "Look up patient Maria Garcia, DOB 11/22/1975, SSN 987-65-4321. She has persistent cough.",
+    "What medications is she currently on? Her insurance ID is BCBS-449281.",
+    "Draft a referral to Dr. Robert Kim at Springfield Medical Group.",
+  ];
+
+  for (const turn of turns) {
+    console.log(`\nClinician: ${turn}`);
+    const response = await chatbot.chat(turn);
+    console.log(`Assistant: ${response}`);
+  }
+}
+
+main();

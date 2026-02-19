@@ -36,7 +36,7 @@ Examples showing how to protect PII when calling LLM APIs.
   <td><b>LangChain</b></td>
   <td>PII-safe chains with RunnableLambda</td>
   <td><a href="examples/langchain-python">langchain-python</a></td>
-  <td>—</td>
+  <td><a href="examples/langchain-node">langchain-node</a></td>
 </tr>
 </tbody>
 </table>
@@ -51,7 +51,8 @@ End-to-end examples for building regulation-compliant AI applications.
   <th>Regulation</th>
   <th>Description</th>
   <th>Region</th>
-  <th>Example</th>
+  <th>Python</th>
+  <th>TypeScript</th>
 </tr>
 </thead>
 <tbody>
@@ -60,12 +61,14 @@ End-to-end examples for building regulation-compliant AI applications.
   <td>EU-compliant OpenAI integration with <code>gdpr_eu</code> policy, batch processing</td>
   <td>EU</td>
   <td><a href="examples/gdpr-openai-python">gdpr-openai-python</a></td>
+  <td><a href="examples/gdpr-openai-node">gdpr-openai-node</a></td>
 </tr>
 <tr>
   <td><b>HIPAA</b></td>
   <td>Healthcare chatbot protecting PHI with <code>hipaa_us</code> policy, multi-turn chat</td>
   <td>US</td>
   <td><a href="examples/hipaa-healthcare-chatbot">hipaa-healthcare-chatbot</a></td>
+  <td><a href="examples/hipaa-healthcare-chatbot-node">hipaa-healthcare-chatbot-node</a></td>
 </tr>
 </tbody>
 </table>
@@ -108,7 +111,8 @@ Examples showing how to safely give AI agents access to sensitive data.
 <tr>
   <th>Platform</th>
   <th>Description</th>
-  <th>Example</th>
+  <th>Python</th>
+  <th>TypeScript</th>
 </tr>
 </thead>
 <tbody>
@@ -116,6 +120,7 @@ Examples showing how to safely give AI agents access to sensitive data.
   <td><b>E2B</b></td>
   <td>AI data analyst — OpenAI writes code from tokenized CSV, E2B executes on real data</td>
   <td><a href="examples/e2b-data-analyst">e2b-data-analyst</a></td>
+  <td><a href="examples/e2b-data-analyst-node">e2b-data-analyst-node</a></td>
 </tr>
 </tbody>
 </table>

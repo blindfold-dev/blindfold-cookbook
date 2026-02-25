@@ -125,6 +125,47 @@ Examples showing how to safely give AI agents access to sensitive data.
 </tbody>
 </table>
 
+## RAG Pipelines
+
+PII-safe Retrieval-Augmented Generation with two-layer protection: redact at ingestion, tokenize at query time.
+
+<table>
+<thead>
+<tr>
+  <th>Framework</th>
+  <th>Description</th>
+  <th>Python</th>
+  <th>TypeScript</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><b>OpenAI + ChromaDB</b></td>
+  <td>Plain OpenAI RAG with ingestion-time redaction and query-time tokenization</td>
+  <td><a href="examples/rag-openai-python">rag-openai-python</a></td>
+  <td><a href="examples/rag-openai-node">rag-openai-node</a></td>
+</tr>
+<tr>
+  <td><b>LangChain + FAISS</b></td>
+  <td><code>BlindfoldPIITransformer</code> for documents, <code>blindfold_protect()</code> for chains</td>
+  <td><a href="examples/rag-langchain-python">rag-langchain-python</a></td>
+  <td><a href="examples/rag-langchain-node">rag-langchain-node</a></td>
+</tr>
+<tr>
+  <td><b>LlamaIndex</b></td>
+  <td>Custom <code>BlindfoldNodePostprocessor</code> tokenizes retrieved nodes before the LLM</td>
+  <td><a href="examples/rag-llamaindex-python">rag-llamaindex-python</a></td>
+  <td><a href="examples/rag-llamaindex-node">rag-llamaindex-node</a></td>
+</tr>
+<tr>
+  <td><b>GDPR Customer Support</b></td>
+  <td>Multi-turn EU support chatbot with <code>gdpr_eu</code> policy, multilingual PII</td>
+  <td><a href="examples/rag-customer-support-python">rag-customer-support-python</a></td>
+  <td><a href="examples/rag-customer-support-node">rag-customer-support-node</a></td>
+</tr>
+</tbody>
+</table>
+
 ## How Blindfold works
 
 ```

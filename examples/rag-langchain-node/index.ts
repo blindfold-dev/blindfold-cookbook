@@ -1,9 +1,9 @@
 /**
  * LangChain RAG Pipeline with Blindfold PII Protection — TypeScript
  *
- * Implements inline blindfoldProtect() and document transformer since
- * there is no langchain-blindfold JS package. Documents are redacted
- * at ingestion, queries are tokenized at runtime.
+ * Contact info is redacted at ingestion (names kept for searchability).
+ * At query time, retrieves with the original question, then tokenizes
+ * context + question in a single call before the LLM.
  *
  * Usage:
  *   npm install
@@ -15,12 +15,8 @@ import "dotenv/config";
 import { Blindfold } from "@blindfold/sdk";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { Document } from "@langchain/core/documents";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import {
-  RunnablePassthrough,
-  RunnableLambda,
-} from "@langchain/core/runnables";
+import { RunnableLambda } from "@langchain/core/runnables";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
@@ -28,11 +24,13 @@ const blindfold = new Blindfold({
   apiKey: process.env.BLINDFOLD_API_KEY!,
 });
 
-// Inline document transformer (equivalent to BlindfoldPIITransformer in Python)
+// Inline document transformer — redacts contact info, keeps names
 async function transformDocuments(docs: Document[]): Promise<Document[]> {
   const safeDocs: Document[] = [];
   for (const doc of docs) {
-    const result = await blindfold.redact(doc.pageContent);
+    const result = await blindfold.redact(doc.pageContent, {
+      entities: ["email address", "phone number"],
+    });
     safeDocs.push(
       new Document({
         pageContent: result.text,
@@ -41,31 +39,6 @@ async function transformDocuments(docs: Document[]): Promise<Document[]> {
     );
   }
   return safeDocs;
-}
-
-// Inline blindfold_protect (equivalent to Python langchain-blindfold)
-function blindfoldProtect(policy: string = "basic") {
-  const mappingStore: Record<string, string> = {};
-
-  const tokenize = new RunnableLambda({
-    func: async (text: string) => {
-      const result = await blindfold.tokenize(text, { policy });
-      Object.assign(mappingStore, result.mapping);
-      return result.text;
-    },
-  });
-
-  const detokenize = new RunnableLambda({
-    func: async (text: string) => {
-      const result = blindfold.detokenize(text, mappingStore);
-      for (const key of Object.keys(mappingStore)) {
-        delete mappingStore[key];
-      }
-      return result.text;
-    },
-  });
-
-  return { tokenize, detokenize };
 }
 
 const SUPPORT_TICKETS = [
@@ -116,37 +89,43 @@ async function main() {
   // === Query ===
   console.log("=== RAG Query ===");
 
-  const { tokenize, detokenize } = blindfoldProtect("basic");
-
-  const prompt = ChatPromptTemplate.fromMessages([
-    [
-      "system",
-      "Answer the question using only the context below.\n\nContext:\n{context}",
-    ],
-    ["human", "{question}"],
-  ]);
-
   const llm = new ChatOpenAI({ modelName: "gpt-4o-mini" });
 
   const formatDocs = (docs: Document[]) =>
     docs.map((d) => d.pageContent).join("\n\n");
 
-  const chain = tokenize
-    .pipe(
-      RunnablePassthrough.assign({
-        context: new RunnableLambda({
-          func: async (question: string) => {
-            const docs = await retriever.invoke(question);
-            return formatDocs(docs);
-          },
-        }),
-        question: new RunnableLambda({ func: async (q: string) => q }),
-      })
-    )
-    .pipe(prompt)
-    .pipe(llm)
-    .pipe(new StringOutputParser())
-    .pipe(detokenize);
+  // Retrieve-then-tokenize chain
+  const chain = new RunnableLambda({
+    func: async (question: string) => {
+      // Step 1: Retrieve with original question — names match
+      const docs = await retriever.invoke(question);
+      const context = formatDocs(docs);
+
+      // Step 2: Single tokenize call — consistent token numbering
+      const promptText = `Context:\n${context}\n\nQuestion: ${question}`;
+      const tokenized = await blindfold.tokenize(promptText);
+
+      // Step 3: Split tokenized prompt for the LLM template
+      const parts = tokenized.text.split("\n\nQuestion: ");
+      const tokenizedContext = parts[0].replace("Context:\n", "");
+      const tokenizedQuestion = parts[1] || tokenized.text;
+
+      const messages = [
+        {
+          role: "system" as const,
+          content: `Answer the question using only the context below.\n\nContext:\n${tokenizedContext}`,
+        },
+        { role: "user" as const, content: tokenizedQuestion },
+      ];
+
+      const response = await llm.invoke(messages);
+      const aiText = await new StringOutputParser().invoke(response);
+
+      // Step 4: Detokenize to restore real names
+      const final = blindfold.detokenize(aiText, tokenized.mapping);
+      return final.text;
+    },
+  });
 
   const question = "What was Sarah Chen's issue?";
   console.log(`Question: ${question}`);

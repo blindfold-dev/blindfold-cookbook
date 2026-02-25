@@ -1,27 +1,22 @@
 # RAG Pipeline with LlamaIndex
 
-PII-safe RAG using LlamaIndex with a custom `BlindfoldNodePostprocessor`. Documents are redacted at ingestion, and retrieved nodes are tokenized before reaching the LLM.
+PII-safe RAG using LlamaIndex with Blindfold. Contact info is redacted at ingestion (names kept for searchability). At query time, retrieves with the original question, then tokenizes context + question in a single call before the LLM.
 
 ## What this example shows
 
-- **Custom `BlindfoldNodePostprocessor`** — tokenizes retrieved nodes before LLM processing
-- **Ingestion-time redaction** — PII is stripped from documents before indexing
-- **Query-time tokenization** — user questions and retrieved context are protected
+- **Selective ingestion redaction** — redact emails and phone numbers, keep names searchable
+- **Search-first flow** — retrieve with original question so names match in the index
+- **Single tokenize call** — context + question tokenized together for consistent token numbering
 - **LlamaIndex VectorStoreIndex** — in-memory vector search with OpenAI embeddings
 
 ## How it works
 
 ```
 Ingestion:
-  Documents → Redact PII → VectorStoreIndex
+  Documents → Redact contact info (keep names) → VectorStoreIndex
 
 Query:
-  Question → Tokenize → Query Engine → BlindfoldNodePostprocessor
-                                        (tokenize retrieved nodes)
-                                              ↓
-                                         LLM (sees only tokens)
-                                              ↓
-                                         Detokenize response
+  Original question → Retrieve nodes → Tokenize(context + question) → LLM → Detokenize
 ```
 
 ## Quick start
@@ -37,15 +32,17 @@ python main.py
 
 ```
 === Ingestion ===
-  Redacted 3 entities from ticket
   Redacted 2 entities from ticket
-  Redacted 3 entities from ticket
+  Redacted 2 entities from ticket
+  Redacted 2 entities from ticket
   Redacted 2 entities from ticket
 Indexed 4 documents
 
 === Query ===
 Original question: What happened with John Smith's billing issue?
-Tokenized question: What happened with <Person_1>'s billing issue?
+
+Retrieved context:
+  "Ticket #1001: Customer John Smith ([EMAIL_ADDRESS], [PHONE_NUMBER])..."
 
 Answer: John Smith reported a billing discrepancy where their account
 was charged $49.99 twice. A refund was issued within 24 hours.

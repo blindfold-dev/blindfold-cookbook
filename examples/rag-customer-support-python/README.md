@@ -2,9 +2,12 @@
 
 Real-world GDPR-compliant customer support chatbot with multi-turn conversation. Processes EU support tickets in German, French, Spanish, and English using the `gdpr_eu` policy and EU region.
 
+At ingestion, contact info (emails, phones, IBANs, national IDs, addresses) is redacted while names are kept for searchability. At query time, the original question is used for retrieval, then context + question are tokenized together before the LLM.
+
 ## What this example shows
 
-- **`gdpr_eu` policy** — detects EU-relevant PII: names, emails, phones, IBANs, national IDs, addresses
+- **`gdpr_eu` policy** — detects EU-relevant PII: emails, phones, IBANs, national IDs, addresses
+- **Selective redaction** — contact info redacted, names kept for vector search
 - **EU region** — `Blindfold(region="eu")` ensures PII processing stays in Europe
 - **Multi-turn conversation** — mapping accumulates across turns for consistent detokenization
 - **Multilingual PII** — German, French, Spanish, and English support tickets
@@ -14,11 +17,11 @@ Real-world GDPR-compliant customer support chatbot with multi-turn conversation.
 
 ```
 Ingestion (EU region):
-  EU tickets (DE/FR/ES/EN) → Redact with gdpr_eu → ChromaDB
+  EU tickets (DE/FR/ES/EN) → Redact contact info with gdpr_eu (keep names) → ChromaDB
 
 Multi-turn query:
-  Turn 1: "Hans Mueller's issue?"  → tokenize → retrieve → LLM → detokenize
-  Turn 2: "Marie Dupont's request?" → tokenize → retrieve → LLM → detokenize
+  Turn 1: "Hans Mueller's issue?" → search (names match!) → tokenize(context+question) → LLM → detokenize
+  Turn 2: "Marie Dupont's request?" → search (names match!) → tokenize(context+question) → LLM → detokenize
           (mapping accumulates across turns)
 ```
 
@@ -42,10 +45,10 @@ python main.py
 
 ```
 === Ingesting EU Support Tickets ===
-  Ticket 1: 4 entities redacted ['Person', 'Email Address', 'Phone Number', 'Iban Code']
-  Ticket 2: 3 entities redacted ['Person', 'Email Address', 'Phone Number']
-  Ticket 3: 4 entities redacted ['Person', 'Email Address', 'Phone Number', 'National Id']
-  Ticket 4: 3 entities redacted ['Person', 'Email Address', 'Phone Number']
+  Ticket 1: 3 entities redacted ['Email Address', 'Phone Number', 'Iban Code']
+  Ticket 2: 3 entities redacted ['Email Address', 'Phone Number', 'Address']
+  Ticket 3: 3 entities redacted ['Email Address', 'Phone Number', 'National Id']
+  Ticket 4: 2 entities redacted ['Email Address', 'Phone Number']
 Stored 4 chunks in ChromaDB
 
 === Multi-Turn Customer Support Chat ===

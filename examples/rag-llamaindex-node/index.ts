@@ -1,8 +1,9 @@
 /**
  * LlamaIndex RAG Pipeline with Blindfold PII Protection — TypeScript
  *
- * Documents are redacted at ingestion, and user queries are tokenized
- * before reaching the LLM.
+ * Contact info is redacted at ingestion (names kept for searchability).
+ * At query time, retrieves with the original question, then tokenizes
+ * context + question in a single call before the LLM.
  *
  * Usage:
  *   npm install
@@ -33,20 +34,23 @@ const SUPPORT_TICKETS = [
 
 async function main() {
   // Configure LlamaIndex
-  Settings.llm = new OpenAI({
+  const llm = new OpenAI({
     model: "gpt-4o-mini",
     apiKey: process.env.OPENAI_API_KEY!,
   });
+  Settings.llm = llm;
   Settings.embedModel = new OpenAIEmbedding({
     apiKey: process.env.OPENAI_API_KEY!,
   });
 
-  // === Ingestion: redact PII before indexing ===
+  // === Ingestion: redact contact info, keep names searchable ===
   console.log("=== Ingestion ===");
   const documents: Document[] = [];
 
   for (let i = 0; i < SUPPORT_TICKETS.length; i++) {
-    const result = await blindfold.redact(SUPPORT_TICKETS[i]);
+    const result = await blindfold.redact(SUPPORT_TICKETS[i], {
+      entities: ["email address", "phone number"],
+    });
     console.log(`  Ticket ${i + 1}: ${result.entities_count} entities redacted`);
     documents.push(new Document({ text: result.text }));
   }
@@ -54,21 +58,32 @@ async function main() {
   const index = await VectorStoreIndex.fromDocuments(documents);
   console.log(`Indexed ${documents.length} documents\n`);
 
-  // === Query: tokenize question, query, detokenize response ===
+  // === Query: retrieve first, single tokenize call, then LLM ===
   console.log("=== Query ===");
   const question = "What happened with John Smith's billing issue?";
+  console.log(`Original: ${question}\n`);
 
-  const tokenized = await blindfold.tokenize(question);
-  console.log(`Original: ${question}`);
-  console.log(`Tokenized: ${tokenized.text}\n`);
+  // Step 1: Retrieve with original question — names match in vector store
+  const retriever = index.asRetriever({ similarityTopK: 3 });
+  const nodes = await retriever.retrieve(question);
+  const context = nodes.map((n) => n.node.getText()).join("\n\n");
 
-  const queryEngine = index.asQueryEngine();
-  const response = await queryEngine.query({ query: tokenized.text });
+  // Step 2: Single tokenize call — consistent token numbering
+  const promptText = `Context:\n${context}\n\nQuestion: ${question}`;
+  const tokenized = await blindfold.tokenize(promptText);
 
-  const final = blindfold.detokenize(
-    response.message.content as string,
-    tokenized.mapping
-  );
+  // Step 3: LLM call with tokenized prompt — no PII
+  const response = await llm.complete({
+    prompt:
+      "You are a helpful support assistant. Answer the user's question " +
+      "based only on the provided context. Keep your answer concise.\n\n" +
+      tokenized.text,
+  });
+  const aiResponse = response.text;
+  console.log(`AI response (with tokens): ${aiResponse}\n`);
+
+  // Step 4: Detokenize to restore real names
+  const final = blindfold.detokenize(aiResponse, tokenized.mapping);
   console.log(`Answer: ${final.text}`);
 }
 

@@ -1,8 +1,9 @@
 """
 LlamaIndex RAG Pipeline with Blindfold PII Protection
 
-Custom BlindfoldNodePostprocessor tokenizes retrieved nodes before
-they reach the LLM. Responses are detokenized to restore real data.
+Contact info is redacted at ingestion (names kept for searchability).
+At query time, context and question are tokenized in a single call
+before reaching the LLM, then the response is detokenized.
 
 Usage:
     pip install -r requirements.txt
@@ -15,37 +16,12 @@ import os
 from blindfold import Blindfold
 from dotenv import load_dotenv
 from llama_index.core import Document, Settings, VectorStoreIndex
-from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
 blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
-
-
-class BlindfoldNodePostprocessor(BaseNodePostprocessor):
-    """Tokenizes PII in retrieved nodes before they reach the LLM."""
-
-    _mapping: dict = {}
-
-    def _postprocess_nodes(
-        self,
-        nodes: list[NodeWithScore],
-        query_bundle: QueryBundle | None = None,
-    ) -> list[NodeWithScore]:
-        for node_with_score in nodes:
-            result = blindfold.tokenize(node_with_score.node.text)
-            node_with_score.node.text = result.text
-            self._mapping.update(result.mapping)
-        return nodes
-
-    def detokenize_response(self, response_text: str) -> str:
-        result = blindfold.detokenize(response_text, self._mapping)
-        self._mapping = {}
-        return result.text
-
 
 SUPPORT_TICKETS = [
     Document(text=(
@@ -73,42 +49,53 @@ SUPPORT_TICKETS = [
 
 def main():
     # Configure LlamaIndex settings
-    Settings.llm = OpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
+    llm = OpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
+    Settings.llm = llm
     Settings.embed_model = OpenAIEmbedding(api_key=os.environ["OPENAI_API_KEY"])
 
-    # Redact PII from documents before indexing
+    # Redact contact info from documents before indexing — keep names searchable
     print("=== Ingestion ===")
     safe_documents = []
     for doc in SUPPORT_TICKETS:
-        result = blindfold.redact(doc.text)
+        result = blindfold.redact(doc.text, entities=["email address", "phone number"])
         print(f"  Redacted {result.entities_count} entities from ticket")
         safe_documents.append(Document(text=result.text))
 
-    # Build index from redacted documents
+    # Build index from selectively redacted documents
     index = VectorStoreIndex.from_documents(safe_documents)
     print(f"Indexed {len(safe_documents)} documents\n")
 
-    # Create postprocessor for query-time tokenization
-    postprocessor = BlindfoldNodePostprocessor()
-    query_engine = index.as_query_engine(node_postprocessors=[postprocessor])
-
-    # Query with PII
+    # Query: retrieve first, then single tokenize call before LLM
     print("=== Query ===")
     question = "What happened with John Smith's billing issue?"
+    print(f"Original question: {question}\n")
 
-    # Tokenize the question
-    tokenized_q = blindfold.tokenize(question)
-    print(f"Original question: {question}")
-    print(f"Tokenized question: {tokenized_q.text}\n")
+    # Step 1: Retrieve with original question — names match in vector store
+    retriever = index.as_retriever(similarity_top_k=3)
+    nodes = retriever.retrieve(question)
+    context = "\n\n".join(node.text for node in nodes)
 
-    # Query with tokenized question
-    response = query_engine.query(tokenized_q.text)
+    print("Retrieved context:")
+    for node in nodes:
+        preview = node.text[:90] + "..." if len(node.text) > 90 else node.text
+        print(f'  "{preview}"')
+    print()
 
-    # Detokenize with combined mappings
-    combined_mapping = {**tokenized_q.mapping, **postprocessor._mapping}
-    final = blindfold.detokenize(str(response), combined_mapping)
-    postprocessor._mapping = {}
+    # Step 2: Single tokenize call — consistent token numbering
+    prompt_text = f"Context:\n{context}\n\nQuestion: {question}"
+    tokenized = blindfold.tokenize(prompt_text)
 
+    # Step 3: LLM call with tokenized prompt — no PII
+    response = llm.complete(
+        f"You are a helpful support assistant. Answer the user's question "
+        f"based only on the provided context. Keep your answer concise.\n\n"
+        f"{tokenized.text}"
+    )
+    ai_response = str(response)
+    print(f"AI response (with tokens): {ai_response}\n")
+
+    # Step 4: Detokenize to restore real names
+    final = blindfold.detokenize(ai_response, tokenized.mapping)
     print(f"Answer: {final.text}")
 
 

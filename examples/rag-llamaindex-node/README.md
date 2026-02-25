@@ -1,13 +1,14 @@
 # LlamaIndex RAG Pipeline with PII Protection — TypeScript
 
-PII-safe RAG using LlamaIndex.TS with Blindfold. Documents are redacted at ingestion, and user queries are tokenized before reaching the LLM.
+PII-safe RAG using LlamaIndex.TS with Blindfold. Contact info is redacted at ingestion (names kept for searchability). At query time, retrieves with the original question, then tokenizes context + question in a single call before the LLM.
 
 ## How it works
 
-1. **Ingest** — support tickets are redacted with `blindfold.redact()` before indexing
-2. **Query** — user question is tokenized with `blindfold.tokenize()`
-3. **Retrieve + Generate** — LlamaIndex queries the index with tokenized question
-4. **Detokenize** — `blindfold.detokenize()` restores real names in the response
+1. **Ingest** — support tickets are redacted with `blindfold.redact()` targeting contact info only (names kept)
+2. **Search** — original question used for retrieval (names match in the index)
+3. **Tokenize** — retrieved context + question tokenized in a single call
+4. **Generate** — LLM sees only tokenized prompt (no PII)
+5. **Detokenize** — `blindfold.detokenize()` restores real names in the response
 
 ## Quick start
 

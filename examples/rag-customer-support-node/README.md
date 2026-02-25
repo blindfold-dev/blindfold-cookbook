@@ -2,9 +2,12 @@
 
 Multi-turn GDPR-compliant customer support chatbot with EU sample tickets in German, French, Spanish, and English. Uses the `gdpr_eu` policy and EU region.
 
+At ingestion, contact info (emails, phones, IBANs, national IDs, addresses) is redacted while names are kept for searchability. At query time, the original question is used for retrieval, then context + question are tokenized together before the LLM.
+
 ## What this example shows
 
-- **`gdpr_eu` policy** — detects EU-relevant PII: names, emails, phones, IBANs, national IDs
+- **`gdpr_eu` policy** — detects EU-relevant PII: emails, phones, IBANs, national IDs
+- **Selective redaction** — contact info redacted, names kept for vector search
 - **EU region** — `Blindfold({ region: "eu" })` ensures PII processing stays in Europe
 - **Multi-turn conversation** — mapping accumulates across turns for consistent detokenization
 - **Multilingual PII** — German, French, Spanish, and English support tickets

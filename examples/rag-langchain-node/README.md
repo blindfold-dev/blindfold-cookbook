@@ -1,11 +1,11 @@
 # LangChain RAG Pipeline with PII Protection — TypeScript
 
-PII-safe RAG using LangChain.js with inline Blindfold integration. Documents are redacted before indexing, and the retrieval chain is wrapped with tokenize/detokenize.
+PII-safe RAG using LangChain.js with inline Blindfold integration. Contact info is redacted before indexing (names kept for searchability), and queries use explicit retrieve-then-tokenize for consistent PII protection.
 
 ## What this example shows
 
-- **Inline `transformDocuments()`** — redacts PII in LangChain Documents before indexing
-- **Inline `blindfoldProtect()`** — wraps the chain with tokenize/detokenize RunnableLambdas
+- **Inline `transformDocuments()`** — selectively redacts contact info in LangChain Documents
+- **Retrieve-then-tokenize** — search with original question, then tokenize context + question together
 - **MemoryVectorStore** — lightweight in-memory vector search with OpenAI embeddings
 - **No `langchain-blindfold` JS package needed** — all integration is done inline
 
@@ -13,10 +13,10 @@ PII-safe RAG using LangChain.js with inline Blindfold integration. Documents are
 
 ```
 Ingestion:
-  Documents → Split → transformDocuments(redact) → Embed → MemoryVectorStore
+  Documents → Split → transformDocuments(redact emails/phones) → Embed → MemoryVectorStore
 
 Query:
-  tokenize → { context: retriever, question } → prompt → LLM → detokenize
+  Original question → Retrieve → Tokenize(context + question) → LLM → Detokenize
 ```
 
 ## Quick start

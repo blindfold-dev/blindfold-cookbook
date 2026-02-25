@@ -1,22 +1,22 @@
 # RAG Pipeline with LangChain + FAISS
 
-PII-safe RAG using LangChain's native Blindfold integration. Documents are protected with `BlindfoldPIITransformer` at ingestion, and queries are wrapped with `blindfold_protect()` at runtime.
+PII-safe RAG using LangChain's native Blindfold integration. Documents are selectively redacted with `BlindfoldPIITransformer` at ingestion (contact info removed, names kept), and queries use explicit retrieve-then-tokenize for consistent PII protection.
 
 ## What this example shows
 
-- **`BlindfoldPIITransformer`** — redact PII in LangChain Documents before indexing
-- **`blindfold_protect()`** — wrap the retrieval chain with automatic tokenization/detokenization
+- **`BlindfoldPIITransformer`** — selectively redact contact info in LangChain Documents before indexing
+- **Retrieve-then-tokenize** — search with original question, then tokenize context + question together
 - **FAISS vector store** — lightweight in-memory vector search
-- **End-to-end LangChain RAG** — loader → splitter → transformer → vectorstore → retrieval chain
+- **End-to-end LangChain RAG** — loader → splitter → transformer → vectorstore → retrieve → tokenize → LLM → detokenize
 
 ## How it works
 
 ```
 Ingestion:
-  Documents → Split → BlindfoldPIITransformer(redact) → Embed → FAISS
+  Documents → Split → BlindfoldPIITransformer(redact emails/phones) → Embed → FAISS
 
 Query:
-  tokenize → { context: retriever, question } → prompt → LLM → detokenize
+  Original question → Retrieve from FAISS → Tokenize(context + question) → LLM → Detokenize
 ```
 
 ## Quick start
@@ -34,7 +34,7 @@ python main.py
 === Document Ingestion ===
   Doc 1:
     Original: "Ticket #1001: Customer Sarah Chen (sarah.chen@acme.com, +1-555-234-567..."
-    Protected: "Ticket #1001: Customer [PERSON] ([EMAIL_ADDRESS], [PHONE_NUMBER])..."
+    Protected: "Ticket #1001: Customer Sarah Chen ([EMAIL_ADDRESS], [PHONE_NUMBER])..."
 Stored 4 documents in FAISS
 
 === RAG Query ===

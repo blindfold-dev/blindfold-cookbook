@@ -2,10 +2,11 @@
 PII-safe RAG pipeline with OpenAI, ChromaDB, and Blindfold.
 
 Two layers of PII protection:
-  1. Ingestion-time: Support tickets are redacted before embedding and storage.
-  2. Query-time: User questions are tokenized, the LLM generates an answer
-     from redacted context, and the response is detokenized to restore
-     original values for the end user.
+  1. Ingestion-time: Contact info (emails, phones) is redacted before
+     embedding and storage. Names are kept for searchability.
+  2. Query-time: After retrieval, context and question are tokenized in a
+     single call before reaching the LLM. The response is detokenized to
+     restore original values for the end user.
 
 Usage:
     pip install -r requirements.txt
@@ -52,9 +53,12 @@ SUPPORT_TICKETS = [
 
 
 def ingest_tickets(collection):
-    """Redact PII from support tickets, split, and store in ChromaDB."""
+    """Redact contact info from support tickets, split, and store in ChromaDB.
+
+    Names are kept so the vector store can match name-based queries.
+    """
     print("=== Ingestion ===")
-    print(f"Redacting PII from {len(SUPPORT_TICKETS)} support tickets...\n")
+    print(f"Redacting contact info from {len(SUPPORT_TICKETS)} support tickets...\n")
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 
@@ -62,7 +66,8 @@ def ingest_tickets(collection):
     all_ids = []
 
     for idx, ticket in enumerate(SUPPORT_TICKETS, start=1):
-        result = blindfold.redact(ticket)
+        # Redact contact info only — keep names searchable
+        result = blindfold.redact(ticket, entities=["email address", "phone number"])
         print(f"  Ticket {idx}: {result.entities_count} entities redacted")
 
         chunks = splitter.split_text(result.text)
@@ -75,26 +80,28 @@ def ingest_tickets(collection):
 
 
 def query_rag(collection, user_question: str) -> str:
-    """Tokenize the user question, retrieve context, generate, detokenize."""
+    """Search with original question, tokenize context+question, generate, detokenize."""
     print("=== Query ===")
     print(f'User question: "{user_question}"\n')
 
-    # Step 1: Tokenize PII in the question
-    tokenized = blindfold.tokenize(user_question)
-    print(f'Tokenized question: "{tokenized.text}"\n')
-
-    # Step 2: Retrieve relevant context from ChromaDB
-    results = collection.query(query_texts=[tokenized.text], n_results=2)
+    # Step 1: Search with original question — names match in vector store
+    results = collection.query(query_texts=[user_question], n_results=2)
     context_chunks = results["documents"][0] if results["documents"] else []
     context = "\n\n".join(context_chunks)
 
-    print("Retrieved context (redacted):")
+    print("Retrieved context:")
     for chunk in context_chunks:
         preview = chunk[:90] + "..." if len(chunk) > 90 else chunk
         print(f'  "{preview}"')
     print()
 
-    # Step 3: Generate answer with OpenAI
+    # Step 2: Single tokenize call — consistent token numbering across
+    # context and question so the LLM sees coherent placeholders
+    prompt_text = f"Context:\n{context}\n\nQuestion: {user_question}"
+    tokenized = blindfold.tokenize(prompt_text)
+    print(f"Tokenized prompt (preview): \"{tokenized.text[:120]}...\"\n")
+
+    # Step 3: Generate answer with OpenAI — no PII in the prompt
     completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -105,7 +112,7 @@ def query_rag(collection, user_question: str) -> str:
             },
             {
                 "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {tokenized.text}",
+                "content": tokenized.text,
             },
         ],
     )

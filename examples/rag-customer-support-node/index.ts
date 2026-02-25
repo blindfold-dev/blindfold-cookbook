@@ -3,7 +3,11 @@
  *
  * Multi-turn customer support chatbot with EU sample tickets.
  * Uses the gdpr_eu policy and EU region for GDPR compliance.
- * Mapping accumulates across turns for consistent detokenization.
+ *
+ * At ingestion, contact info is redacted (names kept for searchability).
+ * At query time, retrieves with the original question, then tokenizes
+ * context + question in a single call before the LLM. Mapping
+ * accumulates across turns for consistent detokenization.
  *
  * Usage:
  *   npm install
@@ -52,8 +56,18 @@ class CustomerSupportRAG {
     const ids: string[] = [];
 
     for (let i = 0; i < tickets.length; i++) {
+      // Redact contact info — keep names searchable
       const result = await this.blindfold.redact(tickets[i], {
         policy: "gdpr_eu",
+        entities: [
+          "email address",
+          "phone number",
+          "iban",
+          "credit card number",
+          "address",
+          "date of birth",
+          "national id number",
+        ],
       });
       const entityTypes = result.detected_entities.map((e: any) => e.type);
       console.log(
@@ -68,30 +82,32 @@ class CustomerSupportRAG {
   }
 
   async query(question: string): Promise<string> {
-    // Tokenize the question with GDPR policy
-    const tokenized = await this.blindfold.tokenize(question, {
-      policy: "gdpr_eu",
-    });
-    Object.assign(this.accumulatedMapping, tokenized.mapping);
-
-    // Retrieve relevant chunks
+    // Step 1: Search with original question — names match in vector store
     const results = await this.collection.query({
-      queryTexts: [tokenized.text],
+      queryTexts: [question],
       nResults: 3,
     });
     const context = results.documents[0].join("\n\n");
 
-    // Build conversation
+    // Step 2: Single tokenize call — consistent token numbering
+    const promptText = `Context:\n${context}\n\nQuestion: ${question}`;
+    const tokenized = await this.blindfold.tokenize(promptText, {
+      policy: "gdpr_eu",
+    });
+    Object.assign(this.accumulatedMapping, tokenized.mapping);
+
+    // Step 3: Build conversation
     const messages: any[] = [
       {
         role: "system",
-        content: `You are a GDPR-aware customer support assistant. Answer questions using only the provided context. Be concise and helpful.\n\nContext:\n${context}`,
+        content:
+          "You are a GDPR-aware customer support assistant. Answer questions using only the provided context. Be concise and helpful.",
       },
       ...this.conversationHistory,
       { role: "user", content: tokenized.text },
     ];
 
-    // Get AI response
+    // Step 4: Get AI response — no PII in the prompt
     const completion = await this.openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
@@ -104,7 +120,7 @@ class CustomerSupportRAG {
       { role: "assistant", content: aiResponse }
     );
 
-    // Detokenize for the user
+    // Step 5: Detokenize for the user
     const restored = this.blindfold.detokenize(
       aiResponse,
       this.accumulatedMapping

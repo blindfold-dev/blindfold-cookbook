@@ -3,6 +3,10 @@ GDPR-Compliant Customer Support RAG Pipeline
 
 Multi-turn customer support chatbot with EU sample tickets.
 Uses the gdpr_eu policy and EU region to ensure GDPR compliance.
+
+At ingestion, contact info is redacted (emails, phones, IBANs, etc.)
+while names are kept for searchability. At query time, context and
+question are tokenized in a single call before reaching the LLM.
 Mapping is accumulated across turns for consistent detokenization.
 
 Usage:
@@ -65,13 +69,29 @@ class CustomerSupportRAG:
         self.accumulated_mapping: dict[str, str] = {}
 
     def ingest_tickets(self, tickets: list[str]) -> None:
-        """Redact PII from tickets and store in ChromaDB."""
+        """Redact contact info from tickets and store in ChromaDB.
+
+        Names are kept so the vector store can match name-based queries.
+        GDPR-sensitive contact info (emails, phones, IBANs, etc.) is redacted.
+        """
         splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 
         print("=== Ingesting EU Support Tickets ===")
         all_chunks = []
         for i, ticket in enumerate(tickets):
-            result = self.blindfold.redact(ticket, policy="gdpr_eu")
+            result = self.blindfold.redact(
+                ticket,
+                policy="gdpr_eu",
+                entities=[
+                    "email address",
+                    "phone number",
+                    "iban",
+                    "credit card number",
+                    "address",
+                    "date of birth",
+                    "national id number",
+                ],
+            )
             entities = [e.type for e in result.detected_entities]
             print(f"  Ticket {i + 1}: {result.entities_count} entities redacted {entities}")
             chunks = splitter.split_text(result.text)
@@ -85,33 +105,34 @@ class CustomerSupportRAG:
 
     def query(self, question: str) -> str:
         """Process a user question with GDPR-safe tokenization."""
-        # Tokenize the question
-        tokenized = self.blindfold.tokenize(question, policy="gdpr_eu")
-        self.accumulated_mapping.update(tokenized.mapping)
-
-        # Retrieve relevant chunks
+        # Step 1: Search with original question — names match in vector store
         results = self.collection.query(
-            query_texts=[tokenized.text],
+            query_texts=[question],
             n_results=3,
         )
         context = "\n\n".join(results["documents"][0])
 
-        # Build conversation with system prompt
+        # Step 2: Single tokenize call — consistent token numbering across
+        # context and question
+        prompt_text = f"Context:\n{context}\n\nQuestion: {question}"
+        tokenized = self.blindfold.tokenize(prompt_text, policy="gdpr_eu")
+        self.accumulated_mapping.update(tokenized.mapping)
+
+        # Step 3: Build conversation with system prompt
         messages = [
             {
                 "role": "system",
                 "content": (
                     "You are a GDPR-aware customer support assistant. "
                     "Answer questions using only the provided context. "
-                    "Be concise and helpful.\n\n"
-                    f"Context:\n{context}"
+                    "Be concise and helpful."
                 ),
             },
         ]
         messages.extend(self.conversation_history)
         messages.append({"role": "user", "content": tokenized.text})
 
-        # Get AI response
+        # Step 4: Get AI response — no PII in the prompt
         completion = self.openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
@@ -122,7 +143,7 @@ class CustomerSupportRAG:
         self.conversation_history.append({"role": "user", "content": tokenized.text})
         self.conversation_history.append({"role": "assistant", "content": ai_response})
 
-        # Detokenize for the user
+        # Step 5: Detokenize for the user
         restored = self.blindfold.detokenize(ai_response, self.accumulated_mapping)
         return restored.text
 

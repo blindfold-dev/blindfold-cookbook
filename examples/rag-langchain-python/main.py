@@ -1,8 +1,9 @@
 """
 LangChain RAG Pipeline with Blindfold PII Protection
 
-Uses BlindfoldPIITransformer for document ingestion and
-blindfold_protect() for query-time chain protection with FAISS.
+Uses BlindfoldPIITransformer for selective document ingestion (redact
+contact info, keep names) and explicit retrieve-then-tokenize for
+query-time protection with FAISS.
 
 Usage:
     pip install -r requirements.txt
@@ -12,17 +13,20 @@ Usage:
 
 import os
 
+from blindfold import Blindfold
 from dotenv import load_dotenv
-from langchain_blindfold import BlindfoldPIITransformer, blindfold_protect
+from langchain_blindfold import BlindfoldPIITransformer
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
+
+blindfold_client = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
 
 # Sample support ticket documents
 TICKETS = [
@@ -62,15 +66,21 @@ TICKETS = [
 
 
 def ingest_documents():
-    """Redact PII from documents and store in FAISS."""
+    """Redact contact info from documents and store in FAISS.
+
+    Names are kept so the vector store can match name-based queries.
+    """
     print("=== Document Ingestion ===")
 
     # Split documents
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_documents(TICKETS)
 
-    # Redact PII before indexing
-    transformer = BlindfoldPIITransformer(pii_method="redact", policy="basic")
+    # Redact contact info only — keep names searchable
+    transformer = BlindfoldPIITransformer(
+        pii_method="redact",
+        entities=["email address", "phone number"],
+    )
     safe_chunks = transformer.transform_documents(chunks)
 
     for i, (original, safe) in enumerate(zip(chunks, safe_chunks)):
@@ -85,8 +95,7 @@ def ingest_documents():
 
 
 def build_rag_chain(vectorstore):
-    """Build a RAG chain with blindfold_protect() wrapping."""
-    tokenize, detokenize = blindfold_protect(policy="basic")
+    """Build a RAG chain with retrieve-then-tokenize flow."""
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
     prompt = ChatPromptTemplate.from_messages([
@@ -99,18 +108,34 @@ def build_rag_chain(vectorstore):
 
     llm = ChatOpenAI(model="gpt-4o-mini")
 
-    def format_docs(docs):
-        return "\n\n".join(doc.page_content for doc in docs)
+    def retrieve_and_tokenize(question: str) -> dict:
+        """Retrieve with original question, then tokenize context+question together."""
+        # Search with original question — names match in vector store
+        docs = retriever.invoke(question)
+        context = "\n\n".join(doc.page_content for doc in docs)
 
-    chain = (
-        tokenize
-        | {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-        | detokenize
-    )
+        # Single tokenize call — consistent token numbering
+        prompt_text = f"Context:\n{context}\n\nQuestion: {question}"
+        tokenized = blindfold_client.tokenize(prompt_text)
+        return {"tokenized_text": tokenized.text, "mapping": tokenized.mapping}
 
+    def extract_and_generate(data: dict) -> str:
+        """Split tokenized prompt back into context/question for the LLM template."""
+        text = data["tokenized_text"]
+        # The tokenized text has "Context:\n...\n\nQuestion: ..." format
+        parts = text.split("\n\nQuestion: ", 1)
+        context = parts[0].removeprefix("Context:\n")
+        question = parts[1] if len(parts) > 1 else text
+
+        messages = prompt.format_messages(context=context, question=question)
+        response = llm.invoke(messages)
+        ai_text = StrOutputParser().invoke(response)
+
+        # Detokenize to restore real names
+        final = blindfold_client.detokenize(ai_text, data["mapping"])
+        return final.text
+
+    chain = RunnableLambda(retrieve_and_tokenize) | RunnableLambda(extract_and_generate)
     return chain
 
 

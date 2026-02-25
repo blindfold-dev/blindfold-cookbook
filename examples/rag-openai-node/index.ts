@@ -1,8 +1,9 @@
 /**
  * RAG Pipeline with PII Protection (OpenAI + ChromaDB) — TypeScript
  *
- * Redacts PII at ingestion time and tokenizes user queries at
- * query time. The LLM never sees real personal data.
+ * Redacts contact info at ingestion time (keeps names for searchability).
+ * At query time, searches with the original question, then tokenizes
+ * context + question in a single call before the LLM.
  *
  * Usage:
  *   npm install
@@ -33,7 +34,10 @@ async function ingest(collection: any) {
   const ids: string[] = [];
 
   for (let i = 0; i < SUPPORT_TICKETS.length; i++) {
-    const result = await blindfold.redact(SUPPORT_TICKETS[i]);
+    // Redact contact info only — keep names searchable
+    const result = await blindfold.redact(SUPPORT_TICKETS[i], {
+      entities: ["email address", "phone number"],
+    });
     console.log(`  Ticket ${i + 1}: ${result.entities_count} entities redacted`);
     safeDocuments.push(result.text);
     ids.push(`ticket-${i}`);
@@ -47,31 +51,33 @@ async function query(collection: any, question: string) {
   console.log("=== Query ===");
   console.log(`Question: ${question}`);
 
-  // Tokenize the question
-  const tokenized = await blindfold.tokenize(question);
-  console.log(`Tokenized: ${tokenized.text}\n`);
-
-  // Retrieve relevant chunks
+  // Step 1: Search with original question — names match in vector store
   const results = await collection.query({
-    queryTexts: [tokenized.text],
+    queryTexts: [question],
     nResults: 3,
   });
   const context = results.documents[0].join("\n\n");
 
-  // Send to LLM with redacted context + tokenized question
+  // Step 2: Single tokenize call — consistent token numbering
+  const promptText = `Context:\n${context}\n\nQuestion: ${question}`;
+  const tokenized = await blindfold.tokenize(promptText);
+  console.log(`Tokenized prompt (preview): ${tokenized.text.slice(0, 120)}...\n`);
+
+  // Step 3: Send to LLM — no PII in the prompt
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: `You are a helpful support assistant. Answer using only this context:\n\n${context}`,
+        content:
+          "You are a helpful support assistant. Answer the user's question based only on the provided context. Keep your answer concise.",
       },
       { role: "user", content: tokenized.text },
     ],
   });
   const aiResponse = completion.choices[0].message.content!;
 
-  // Detokenize to restore real names
+  // Step 4: Detokenize to restore real names
   const final = blindfold.detokenize(aiResponse, tokenized.mapping);
   console.log(`Answer: ${final.text}`);
 }

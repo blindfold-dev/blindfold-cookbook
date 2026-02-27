@@ -70,6 +70,15 @@ npm start
 - For simpler integration, use [Selective Redact (Strategy A)](../rag-selective-redact-node/)
 - For better search quality with consistent tokens, use [Consistent Registry (Strategy C)](../rag-consistent-registry-node/)
 
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.
+
+Local mode limitations:
+- NLP-only entities (Person, Organization, Medical Condition) are not detected
+- Custom dashboard policies are not available (built-in policies work)
+
 ## Resources
 
 - [RAG Pipeline Protection Guide](https://docs.blindfold.dev/rag)

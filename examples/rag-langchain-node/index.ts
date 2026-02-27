@@ -21,7 +21,7 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 const blindfold = new Blindfold({
-  apiKey: process.env.BLINDFOLD_API_KEY!,
+  apiKey: process.env.BLINDFOLD_API_KEY,
 });
 
 // Inline document transformer — redacts contact info, keeps names

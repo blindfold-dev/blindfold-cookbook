@@ -21,7 +21,7 @@ from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
-blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 SUPPORT_TICKETS = [
     Document(text=(

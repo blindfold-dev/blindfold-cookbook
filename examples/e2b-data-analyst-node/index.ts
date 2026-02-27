@@ -15,7 +15,7 @@ import { Blindfold } from "@blindfold/sdk";
 import { Sandbox } from "@e2b/code-interpreter";
 import OpenAI from "openai";
 
-const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY! });
+const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 const SAMPLE_CSV = `name,email,ssn,age,diagnosis,medication,doctor,city

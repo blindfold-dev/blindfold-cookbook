@@ -23,3 +23,12 @@ npm start
 - [GDPR Compliance Guide](https://docs.blindfold.dev/compliance/gdpr)
 - [EU Region Documentation](https://docs.blindfold.dev/essentials/regions)
 - [Blindfold Node.js SDK](https://www.npmjs.com/package/@blindfold/sdk)
+
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.
+
+Local mode limitations:
+- NLP-only entities (Person, Organization, Medical Condition) are not detected
+- Custom dashboard policies are not available (built-in policies work)

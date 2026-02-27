@@ -96,3 +96,12 @@ In production, back the `TokenRegistry` with a database:
 
 - [RAG Pipeline Protection Guide](https://docs.blindfold.dev/rag)
 - [TypeScript SDK Reference](https://docs.blindfold.dev/sdks/js-sdk)
+
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.
+
+Local mode limitations:
+- NLP-only entities (Person, Organization, Medical Condition) are not detected
+- Custom dashboard policies are not available (built-in policies work)

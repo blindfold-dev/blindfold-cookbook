@@ -29,7 +29,7 @@ from openai import OpenAI
 load_dotenv()
 
 # --- Clients ---
-blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 # --- Sample data ---

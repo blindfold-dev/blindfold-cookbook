@@ -22,7 +22,7 @@ import {
 } from "llamaindex";
 
 const blindfold = new Blindfold({
-  apiKey: process.env.BLINDFOLD_API_KEY!,
+  apiKey: process.env.BLINDFOLD_API_KEY,
 });
 
 const SUPPORT_TICKETS = [

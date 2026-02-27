@@ -53,3 +53,12 @@ was charged $49.99 twice. A refund was issued within 24 hours.
 - [RAG Pipeline Protection Guide](https://docs.blindfold.dev/rag)
 - [Python SDK Reference](https://docs.blindfold.dev/sdks/python-sdk)
 - [LlamaIndex Documentation](https://docs.llamaindex.ai/)
+
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.
+
+Local mode limitations:
+- NLP-only entities (Person, Organization, Medical Condition) are not detected
+- Custom dashboard policies are not available (built-in policies work)

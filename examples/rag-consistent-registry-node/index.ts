@@ -27,7 +27,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
-const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY! });
+const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 const SUPPORT_TICKETS = [

@@ -21,12 +21,12 @@ app = FastAPI()
 
 app.add_middleware(
     BlindfoldMiddleware,
-    api_key=os.environ["BLINDFOLD_API_KEY"],
+    api_key=os.environ.get("BLINDFOLD_API_KEY"),
     policy="basic",
     text_field="message",
 )
 
-blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 

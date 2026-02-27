@@ -20,7 +20,7 @@ def protected_chat(
     model: str = "gpt-4o-mini",
 ) -> str:
     """Send a message to OpenAI with PII automatically protected."""
-    blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+    blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
     openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     # 1. Tokenize — replace PII with safe tokens

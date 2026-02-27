@@ -26,7 +26,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
-blindfold_client = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+blindfold_client = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 # Sample support ticket documents
 TICKETS = [

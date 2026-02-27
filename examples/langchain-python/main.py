@@ -15,7 +15,7 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
-blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 
 def blindfold_protect(policy: str = "basic"):

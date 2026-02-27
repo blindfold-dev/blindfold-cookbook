@@ -9,7 +9,7 @@ import "dotenv/config";
 import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 
-const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY! });
+const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 async function protectedChat(

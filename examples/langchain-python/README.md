@@ -25,3 +25,8 @@ cp ../../.env.example .env
 ```bash
 python main.py
 ```
+
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.

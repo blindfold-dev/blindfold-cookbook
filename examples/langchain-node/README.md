@@ -27,3 +27,8 @@ npm start
 - [Blindfold Documentation](https://docs.blindfold.dev)
 - [LangChain.js Documentation](https://js.langchain.com)
 - [Blindfold Node.js SDK](https://www.npmjs.com/package/@blindfold/sdk)
+
+## Offline mode
+
+Works without a Blindfold API key. Omit `BLINDFOLD_API_KEY` from `.env`
+and PII detection runs locally using built-in regex patterns.

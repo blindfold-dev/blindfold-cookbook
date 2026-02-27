@@ -8,9 +8,11 @@ Each example is a self-contained project you can clone and run. They show how to
 
 ## Prerequisites
 
-1. Get a free API key at [app.blindfold.dev](https://app.blindfold.dev)
-2. Copy `.env.example` to `.env` in the example directory
-3. Add your `BLINDFOLD_API_KEY` (and `OPENAI_API_KEY` where needed)
+1. Copy `.env.example` to `.env` in the example directory
+2. Add your `OPENAI_API_KEY` (required for LLM calls)
+3. Optionally add `BLINDFOLD_API_KEY` from [app.blindfold.dev](https://app.blindfold.dev)
+
+> **Offline mode:** All examples work without a `BLINDFOLD_API_KEY`. When omitted, PII detection runs locally using built-in regex patterns. NLP-only entities (Person, Organization) require an API key.
 
 ## LLM Providers
 

@@ -21,7 +21,7 @@ load_dotenv()
 
 def create_clients():
     blindfold = Blindfold(
-        api_key=os.environ["BLINDFOLD_API_KEY"],
+        api_key=os.environ.get("BLINDFOLD_API_KEY"),
         region="eu",
     )
     openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])

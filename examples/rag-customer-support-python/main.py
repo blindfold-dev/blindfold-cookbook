@@ -59,7 +59,7 @@ class CustomerSupportRAG:
 
     def __init__(self):
         self.blindfold = Blindfold(
-            api_key=os.environ["BLINDFOLD_API_KEY"],
+            api_key=os.environ.get("BLINDFOLD_API_KEY"),
             region="eu",
         )
         self.openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])

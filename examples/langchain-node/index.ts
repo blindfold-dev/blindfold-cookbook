@@ -16,7 +16,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableLambda } from "@langchain/core/runnables";
 
-const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY! });
+const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 
 function blindfoldProtect(policy: string = "basic") {
   const mappingStore: Record<string, string> = {};

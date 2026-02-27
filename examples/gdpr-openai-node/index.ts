@@ -15,7 +15,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 
 const blindfold = new Blindfold({
-  apiKey: process.env.BLINDFOLD_API_KEY!,
+  apiKey: process.env.BLINDFOLD_API_KEY,
   region: "eu",
 });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });

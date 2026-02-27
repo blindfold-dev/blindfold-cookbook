@@ -31,7 +31,7 @@ Sarah Thompson,s.thompson@email.com,789-01-2345,44,Migraine,Sumatriptan 50mg,Dr.
 
 
 def main():
-    blindfold = Blindfold(api_key=os.environ["BLINDFOLD_API_KEY"])
+    blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
     openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     # Step 1: Tokenize — replace PII with safe tokens

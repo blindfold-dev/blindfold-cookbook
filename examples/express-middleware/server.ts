@@ -19,7 +19,7 @@ app.use(express.json());
 app.post(
   "/chat",
   blindfoldMiddleware({
-    apiKey: process.env.BLINDFOLD_API_KEY!,
+    apiKey: process.env.BLINDFOLD_API_KEY,
     policy: "basic",
     textField: "message",
   }),

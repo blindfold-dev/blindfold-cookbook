@@ -35,6 +35,18 @@ Examples showing how to protect PII when calling LLM APIs.
   <td><a href="examples/openai-node">openai-node</a></td>
 </tr>
 <tr>
+  <td><b>Anthropic Claude</b></td>
+  <td>Tokenize user messages before Claude, detokenize responses</td>
+  <td><a href="examples/anthropic-python">anthropic-python</a></td>
+  <td><a href="examples/anthropic-node">anthropic-node</a></td>
+</tr>
+<tr>
+  <td><b>Google Gemini</b></td>
+  <td>Tokenize user messages before Gemini, detokenize responses</td>
+  <td><a href="examples/gemini-python">gemini-python</a></td>
+  <td><a href="examples/gemini-node">gemini-node</a></td>
+</tr>
+<tr>
   <td><b>LangChain</b></td>
   <td>PII-safe chains with RunnableLambda</td>
   <td><a href="examples/langchain-python">langchain-python</a></td>

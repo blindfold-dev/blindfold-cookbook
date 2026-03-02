@@ -9,6 +9,10 @@
  * This gives zero PII in the vector store AND perfect cross-document
  * search because the same entity always maps to the same token.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Flow:
  *   1. Ingest: blindfold.tokenize(ticket) to detect entities
  *   2. Register: registry.getOrCreate(realValue, blindfoldToken) for each entity
@@ -27,6 +31,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

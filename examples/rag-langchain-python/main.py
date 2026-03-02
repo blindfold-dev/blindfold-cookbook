@@ -5,6 +5,10 @@ Uses BlindfoldPIITransformer for selective document ingestion (redact
 contact info, keep names) and explicit retrieve-then-tokenize for
 query-time protection with FAISS.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -26,6 +30,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
+# API key is optional — omit it to run in local mode (regex-based, offline)
 blindfold_client = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 # Sample support ticket documents

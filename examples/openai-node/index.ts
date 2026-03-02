@@ -3,12 +3,17 @@
  *
  * Tokenizes user messages before sending to OpenAI, then detokenizes
  * the response so real names/emails appear in the final output.
+ *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
  */
 
 import "dotenv/config";
 import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

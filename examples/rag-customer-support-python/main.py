@@ -9,6 +9,10 @@ while names are kept for searchability. At query time, context and
 question are tokenized in a single call before reaching the LLM.
 Mapping is accumulated across turns for consistent detokenization.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -58,6 +62,7 @@ class CustomerSupportRAG:
     """GDPR-compliant customer support RAG with multi-turn conversation."""
 
     def __init__(self):
+        # API key is optional — omit it to run in local mode (regex-based, offline)
         self.blindfold = Blindfold(
             api_key=os.environ.get("BLINDFOLD_API_KEY"),
             region="eu",

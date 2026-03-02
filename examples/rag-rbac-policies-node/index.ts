@@ -5,6 +5,10 @@
  * healthcare RAG pipeline. Each role has a Blindfold policy that controls
  * which entity types are tokenized before the LLM sees them.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Roles:
  *   - doctor:     Sees names, conditions, medications. Contact info redacted.
  *   - nurse:      Sees names and conditions. No SSN, contact, or DOB.
@@ -30,6 +34,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

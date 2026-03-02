@@ -3,6 +3,10 @@
  *
  * POST /chat sends user messages to OpenAI with PII automatically
  * tokenized and detokenized.
+ *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
  */
 
 import "dotenv/config";
@@ -16,6 +20,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 app.use(express.json());
 
 // Apply Blindfold middleware to /chat endpoint
+// API key is optional — omit it to run in local mode (regex-based, offline)
 app.post(
   "/chat",
   blindfoldMiddleware({

@@ -5,6 +5,10 @@
  * side by side so you can see how each handles ingestion, search, and
  * LLM interaction.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Strategy A - Selective Redact (recommended):
  *   Ingestion: redact contact info (emails, phones), keep names
  *   Query: search with original question, single tokenize(context+question), LLM, detokenize
@@ -33,6 +37,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

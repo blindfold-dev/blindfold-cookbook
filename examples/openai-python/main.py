@@ -3,6 +3,10 @@ OpenAI + Blindfold: Protect PII in LLM conversations.
 
 Tokenizes user messages before sending to OpenAI, then detokenizes
 the response so real names/emails appear in the final output.
+
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
 """
 
 import os
@@ -20,6 +24,7 @@ def protected_chat(
     model: str = "gpt-4o-mini",
 ) -> str:
     """Send a message to OpenAI with PII automatically protected."""
+    # API key is optional — omit it to run in local mode (regex-based, offline)
     blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
     openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 

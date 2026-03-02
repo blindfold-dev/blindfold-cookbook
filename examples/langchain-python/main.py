@@ -3,6 +3,10 @@ LangChain + Blindfold: PII-safe chains with RunnableLambda.
 
 Wraps any LangChain chain with Blindfold tokenization/detokenization
 so PII never reaches the language model.
+
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
 """
 
 import os
@@ -15,6 +19,7 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
+# API key is optional — omit it to run in local mode (regex-based, offline)
 blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 

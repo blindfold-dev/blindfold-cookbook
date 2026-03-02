@@ -4,6 +4,10 @@
  * Wraps any LangChain chain with Blindfold tokenization/detokenization
  * so PII never reaches the language model.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Usage:
  *   npm install
  *   cp .env.example .env  # add your API keys
@@ -16,6 +20,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableLambda } from "@langchain/core/runnables";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 
 function blindfoldProtect(policy: string = "basic") {

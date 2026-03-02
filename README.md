@@ -4,7 +4,7 @@ Example code and guides for [Blindfold](https://blindfold.dev) — the privacy A
 
 Each example is a self-contained project you can clone and run. They show how to integrate Blindfold with popular LLM providers and frameworks.
 
-**Resources:** [Documentation](https://docs.blindfold.dev) | [Python SDK](https://pypi.org/project/blindfold-sdk/) | [Node.js SDK](https://www.npmjs.com/package/@blindfold/sdk) | [CLI](https://www.npmjs.com/package/@blindfold/cli) | [MCP Server](https://www.npmjs.com/package/@blindfold/mcp-server)
+**Resources:** [Documentation](https://docs.blindfold.dev) | [Python SDK](https://pypi.org/project/blindfold-sdk/) | [Node.js SDK](https://www.npmjs.com/package/@blindfold/sdk) | [Java SDK](https://github.com/blindfold-dev/Blindfold/tree/main/packages/java-sdk) | [Go SDK](https://github.com/blindfold-dev/Blindfold/tree/main/packages/go-sdk) | [.NET SDK](https://github.com/blindfold-dev/Blindfold/tree/main/packages/dotnet-sdk) | [CLI](https://www.npmjs.com/package/@blindfold/cli) | [MCP Server](https://www.npmjs.com/package/@blindfold/mcp-server)
 
 ## Prerequisites
 
@@ -25,6 +25,9 @@ Examples showing how to protect PII when calling LLM APIs.
   <th>Description</th>
   <th>Python</th>
   <th>TypeScript</th>
+  <th>Java</th>
+  <th>Go</th>
+  <th>.NET</th>
 </tr>
 </thead>
 <tbody>
@@ -33,24 +36,36 @@ Examples showing how to protect PII when calling LLM APIs.
   <td>Tokenize user messages before GPT, detokenize responses</td>
   <td><a href="examples/openai-python">openai-python</a></td>
   <td><a href="examples/openai-node">openai-node</a></td>
+  <td><a href="examples/openai-java">openai-java</a></td>
+  <td><a href="examples/openai-go">openai-go</a></td>
+  <td><a href="examples/openai-dotnet">openai-dotnet</a></td>
 </tr>
 <tr>
   <td><b>Anthropic Claude</b></td>
   <td>Tokenize user messages before Claude, detokenize responses</td>
   <td><a href="examples/anthropic-python">anthropic-python</a></td>
   <td><a href="examples/anthropic-node">anthropic-node</a></td>
+  <td>—</td>
+  <td>—</td>
+  <td>—</td>
 </tr>
 <tr>
   <td><b>Google Gemini</b></td>
   <td>Tokenize user messages before Gemini, detokenize responses</td>
   <td><a href="examples/gemini-python">gemini-python</a></td>
   <td><a href="examples/gemini-node">gemini-node</a></td>
+  <td>—</td>
+  <td>—</td>
+  <td>—</td>
 </tr>
 <tr>
   <td><b>LangChain</b></td>
   <td>PII-safe chains with RunnableLambda</td>
   <td><a href="examples/langchain-python">langchain-python</a></td>
   <td><a href="examples/langchain-node">langchain-node</a></td>
+  <td>—</td>
+  <td>—</td>
+  <td>—</td>
 </tr>
 </tbody>
 </table>

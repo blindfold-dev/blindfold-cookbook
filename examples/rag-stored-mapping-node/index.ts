@@ -12,6 +12,10 @@
  * <Person_1> in ticket A but <Person_3> in ticket B. This makes cross-document
  * search harder but keeps zero PII in the vector store.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Flow:
  *   1. Ingest: blindfold.tokenize(ticket) -> store tokenized text + mapping per doc
  *   2. Query:  build reverse lookup, replace names with tokens, search
@@ -30,6 +34,7 @@ import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

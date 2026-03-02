@@ -5,6 +5,10 @@ Contact info is redacted at ingestion (names kept for searchability).
 At query time, context and question are tokenized in a single call
 before reaching the LLM, then the response is detokenized.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -21,6 +25,7 @@ from llama_index.llms.openai import OpenAI
 
 load_dotenv()
 
+# API key is optional — omit it to run in local mode (regex-based, offline)
 blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 
 SUPPORT_TICKETS = [

@@ -9,6 +9,10 @@
  * context + question in a single call before the LLM. Mapping
  * accumulates across turns for consistent detokenization.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Usage:
  *   npm install
  *   cp .env.example .env  # add your API keys
@@ -36,6 +40,7 @@ class CustomerSupportRAG {
   private accumulatedMapping: Record<string, string> = {};
 
   constructor() {
+    // API key is optional — omit it to run in local mode (regex-based, offline)
     this.blindfold = new Blindfold({
       apiKey: process.env.BLINDFOLD_API_KEY,
       region: "eu",

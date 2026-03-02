@@ -3,6 +3,10 @@ FastAPI server with Blindfold PII protection middleware.
 
 POST /chat sends user messages to OpenAI with PII automatically
 tokenized and detokenized.
+
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
 """
 
 import os
@@ -19,6 +23,7 @@ load_dotenv()
 
 app = FastAPI()
 
+# API key is optional — omit it to run in local mode (regex-based, offline)
 app.add_middleware(
     BlindfoldMiddleware,
     api_key=os.environ.get("BLINDFOLD_API_KEY"),
@@ -26,6 +31,7 @@ app.add_middleware(
     text_field="message",
 )
 
+# API key is optional — omit it to run in local mode (regex-based, offline)
 blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 

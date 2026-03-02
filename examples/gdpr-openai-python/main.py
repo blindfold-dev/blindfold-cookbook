@@ -4,6 +4,10 @@ GDPR-Compliant OpenAI Integration with Blindfold
 Tokenizes EU user data with the gdpr_eu policy and EU region before
 sending to OpenAI. The LLM never sees real personal data.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -20,6 +24,7 @@ load_dotenv()
 
 
 def create_clients():
+    # API key is optional — omit it to run in local mode (regex-based, offline)
     blindfold = Blindfold(
         api_key=os.environ.get("BLINDFOLD_API_KEY"),
         region="eu",

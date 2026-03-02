@@ -4,6 +4,10 @@
  * OpenAI writes analysis code from tokenized data (never sees real PII),
  * then E2B executes the code on the original data for accurate results.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Usage:
  *   npm install
  *   cp .env.example .env  # add your API keys
@@ -15,6 +19,7 @@ import { Blindfold } from "@blindfold/sdk";
 import { Sandbox } from "@e2b/code-interpreter";
 import OpenAI from "openai";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({ apiKey: process.env.BLINDFOLD_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 

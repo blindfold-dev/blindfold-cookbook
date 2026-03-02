@@ -10,6 +10,10 @@ search quality because tokens match consistently across all documents.
 The TokenRegistry class manages the mapping between real values and their
 consistent tokens. In production, back this with a database for persistence.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -26,6 +30,7 @@ from openai import OpenAI
 load_dotenv()
 
 # --- Clients ---
+# API key is optional — omit it to run in local mode (regex-based, offline)
 blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 

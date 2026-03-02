@@ -4,6 +4,10 @@ Blindfold + E2B: PII-Safe AI Data Analyst
 OpenAI writes analysis code from tokenized data (never sees real PII),
 then E2B executes the code on the original data for accurate results.
 
+Works in two modes:
+  - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+  - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+
 Usage:
     pip install -r requirements.txt
     cp .env.example .env  # add your API keys
@@ -31,6 +35,7 @@ Sarah Thompson,s.thompson@email.com,789-01-2345,44,Migraine,Sumatriptan 50mg,Dr.
 
 
 def main():
+    # API key is optional — omit it to run in local mode (regex-based, offline)
     blindfold = Blindfold(api_key=os.environ.get("BLINDFOLD_API_KEY"))
     openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 

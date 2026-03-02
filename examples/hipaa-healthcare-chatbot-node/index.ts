@@ -4,6 +4,10 @@
  * Tokenizes PHI with the hipaa_us policy and US region before sending
  * to OpenAI. Supports multi-turn conversation with accumulated mapping.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Usage:
  *   npm install
  *   cp .env.example .env  # add your API keys
@@ -14,6 +18,7 @@ import "dotenv/config";
 import { Blindfold } from "@blindfold/sdk";
 import OpenAI from "openai";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({
   apiKey: process.env.BLINDFOLD_API_KEY,
   region: "us",

@@ -5,6 +5,10 @@
  * At query time, retrieves with the original question, then tokenizes
  * context + question in a single call before the LLM.
  *
+ * Works in two modes:
+ *   - Local mode (no API key): PII detected via built-in regex patterns (emails, cards, SSNs, etc.)
+ *   - Cloud mode (with API key): NLP-powered detection adds names, addresses, organizations
+ *
  * Usage:
  *   npm install
  *   cp .env.example .env  # add your API keys
@@ -20,6 +24,7 @@ import { RunnableLambda } from "@langchain/core/runnables";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
+// API key is optional — omit it to run in local mode (regex-based, offline)
 const blindfold = new Blindfold({
   apiKey: process.env.BLINDFOLD_API_KEY,
 });
